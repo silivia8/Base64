@@ -1,0 +1,6 @@
+{
+  "name": "Base64 Image Converter",
+  "description": "Transform image files to Base64 text strings and convert Base64 strings back into downloadable images, entirely client-side.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
