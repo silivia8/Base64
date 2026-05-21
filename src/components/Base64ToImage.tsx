@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, 
@@ -12,7 +12,8 @@ import {
   Trash2,
   HelpCircle,
   FileImage,
-  Layers
+  Layers,
+  Upload
 } from 'lucide-react';
 import { DecodedImage } from '../types';
 
@@ -22,6 +23,70 @@ export default function Base64ToImage() {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [customFilename, setCustomFilename] = useState('decoded-image');
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTxtUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'text/plain' && !file.name.endsWith('.txt')) {
+      setError('Please upload a valid .txt file.');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setInputText(text);
+      setIsProcessing(false);
+    };
+    reader.onerror = () => {
+      setError('Error reading text file.');
+      setIsProcessing(false);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      if (file.type !== 'text/plain' && !file.name.endsWith('.txt')) {
+        setError('Please drop a valid .txt file.');
+        return;
+      }
+      setIsProcessing(true);
+      setError(null);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        setInputText(text);
+        setIsProcessing(false);
+      };
+      reader.onerror = () => {
+        setError('Error reading text file.');
+        setIsProcessing(false);
+      };
+      reader.readAsText(file);
+    }
+  };
 
   // Guess MIME-type of raw base64 string based on common magic headers
   const guessMimeType = (rawStr: string): string => {
@@ -204,16 +269,36 @@ export default function Base64ToImage() {
             <FileText className="w-4 h-4" />
             Paste Base64 Text
           </div>
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={!inputText}
-            className="text-xs font-semibold text-zinc-400 hover:text-red-400 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-            id="clear-decoder-btn"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Reset Space
-          </button>
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt"
+              onChange={handleTxtUpload}
+              className="hidden"
+              id="txt-file-input"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs font-semibold text-zinc-400 hover:text-zinc-250 transition-colors flex items-center gap-1.5 cursor-pointer"
+              id="upload-txt-btn"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Upload TXT
+            </button>
+            <span className="w-px h-3 bg-zinc-800" />
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={!inputText}
+              className="text-xs font-semibold text-zinc-400 hover:text-red-400 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+              id="clear-decoder-btn"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Reset Space
+            </button>
+          </div>
         </div>
 
         <div className="relative flex-1 flex flex-col">
@@ -221,8 +306,16 @@ export default function Base64ToImage() {
             aria-label="Paste Base64 string here"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Paste raw Base64 string, HTML Image tag, CSS background url, or complete Data URI here... (e.g. data:image/png;base64,iVB...)"
-            className="w-full h-80 md:h-[400px] font-mono text-xs p-4 bg-zinc-950 border border-zinc-850 rounded-xl leading-relaxed focus:outline-hidden focus:ring-1 focus:ring-zinc-700 resize-none shadow-inner text-zinc-300"
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            placeholder="Paste raw Base64 string, HTML Image tag, CSS background url, or complete Data URI here... (or drag and drop a .txt file here)"
+            className={`w-full h-80 md:h-[400px] font-mono text-xs p-4 bg-zinc-950 border rounded-xl leading-relaxed focus:outline-hidden focus:ring-1 focus:ring-zinc-700 resize-none shadow-inner text-zinc-300 transition-all ${
+              dragActive
+                ? 'border-indigo-500 bg-indigo-950/20'
+                : 'border-zinc-850'
+            }`}
             id="base64-text-input-field"
           />
 
