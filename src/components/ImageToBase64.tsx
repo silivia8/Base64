@@ -13,6 +13,8 @@ import {
   Maximize2 
 } from 'lucide-react';
 import { ImageData, OutputFormat } from '../types';
+// @ts-ignore
+import demoJpg from '../../demo.jpg';
 
 export default function ImageToBase64() {
   const [dragActive, setDragActive] = useState(false);
@@ -203,28 +205,12 @@ export default function ImageToBase64() {
     setIsLoading(true);
     setError(null);
     try {
-      // 1x1 Transparent pixel base64 generator OR high-quality small inline vector PNG sample
-      // Let's load a cute 60x60 checkerboard mini-canvas PNG sample
-      const samplePngDataUrl = 
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC53+91AAAAKlBMVEUAAAArKyv/Zmb///8zMzN/f393d3dERESAgIBvb28SEhI7OzsYGBgICAi/i0NfAAAABXRSTlMAgID/gK63g8sAAAEDSURBVFhH7dexDoMwDERRpA6E8GZg///ThbYpS6Z2idSpV+6Sp0u2G9LpSvdCq6kGvYfe1/PqZ9X8U9V8pZqA3SMeP9lO8XlAt3fA8qg+VAtfAtfCV8C18CVwfK2bT0vVfPz7X6v7VAtfAtfCV8CVYPeW7orDfcCg0A8g9APonZ3oHq+99vEC8D6Ar/tUPZzS/Xn0/0X1g9rX0fux7K/vS6L6/K8L6f0A8D4X0vsS0XsYmIeXidb8H675D65zL66zK67zO64zL67zMub3XMyHlYnWDAbCgBggFqgBZoEToA9gEzoBvA9gDzoC8v4g6A/uE9b8h6r5V6r5R7XbAtKpaX6qV6sGNfUDo/X1I5bQhREAAAAASUVORK5CYII=";
-      
-      const imgObj = new Image();
-      imgObj.onload = () => {
-        setImage({
-          name: 'checkerboard-sample.png',
-          size: 326,
-          type: 'image/png',
-          lastModified: Date.now(),
-          width: 80,
-          height: 80,
-          base64Raw: samplePngDataUrl.split(',')[1],
-          dataUrl: samplePngDataUrl,
-        });
-        setIsLoading(false);
-      };
-      imgObj.src = samplePngDataUrl;
+      const response = await fetch(demoJpg);
+      const blob = await response.blob();
+      const file = new File([blob], 'demo.jpg', { type: blob.type || 'image/jpeg' });
+      processFile(file);
     } catch (e) {
-      setError('Could not load sample file.');
+      setError('Could not load demo.jpg file.');
       setIsLoading(false);
     }
   };
